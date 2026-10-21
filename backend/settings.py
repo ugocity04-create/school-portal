@@ -177,24 +177,6 @@ import os as _os
 MEDIA_URL = "/media/"
 MEDIA_ROOT = _os.path.join(BASE_DIR, "media")
 
-# This only switch on when the server sets SCHOOLPORTAL_PRODUCTION=1.
-import os as _os_live
-
-if _os_live.environ.get("SCHOOLPORTAL_PRODUCTION") == "1":
-    DEBUG = False
-    SECRET_KEY =  _os_live.environ["DJANGO_SECRET_KEY"]
-    ALLOWED_HOSTS = [h.strip() for h in 
-                     _os_live.environ.get("ALLOWED_HOSTS", "").split(",")
-                     if h.strip()]
-    CSRF_TRUSTED_ORIGINS = list(globals().get("CSRF_TRUSTED_ORIGINS", [])) + [
-        "https://" + h for h in ALLOWED_HOSTS
-    ]
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    STATIC_URL = "/static/"
-    STATIC_ROOT = _os_live.path.join(BASE_DIR, "staticfiles")
-
 
 # ===================== Going live on Render (does nothing on your laptop) =====================
 # These only switch on when the server sets SCHOOLPORTAL_PRODUCTION=1.
