@@ -27,10 +27,14 @@ from django.conf.urls.static import static as _static
 
 urlpatterns += _static(_settings.MEDIA_URL, document_root=_settings.MEDIA_ROOT)
 
-# ================== Shows the React site at the home address ====================
+# ===================== Show the React site at the home address =====================
 from portal import views_spa as _spa
+from django.urls import re_path as _re_path
+from django.views.static import serve as _serve
 
 urlpatterns += [
     _path("favicon.svg", _spa.favicon),
-    _path("", _spa.index)
+    _path("", _spa.index),
+    # profile pictures (on the free host they reset when the site restarts)
+    _re_path(r"^media/(?P<path>.*)$", _serve, {"document_root": _settings.MEDIA_ROOT}),
 ]
