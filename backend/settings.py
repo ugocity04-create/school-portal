@@ -194,3 +194,54 @@ if _os_live.environ.get("SCHOOLPORTAL_PRODUCTION") == "1":
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     STATIC_URL = "/static/"
     STATIC_ROOT = _os_live.path.join(BASE_DIR, "staticfiles")
+
+
+# ===================== Going live on Render (does nothing on your laptop) =====================
+# These only switch on when the server sets SCHOOLPORTAL_PRODUCTION=1.
+# If you already pasted the PythonAnywhere version of this block, DELETE it and paste this one instead.
+import os as _os_live
+import urllib.parse as _up_live
+
+if _os_live.environ.get("SCHOOLPORTAL_PRODUCTION") == "1":
+    DEBUG = False
+    SECRET_KEY = _os_live.environ["DJANGO_SECRET_KEY"]
+
+    ALLOWED_HOSTS = [h.strip() for h in _os_live.environ.get("ALLOWED_HOSTS", "").split(",") if h.strip()]
+    _render_host = _os_live.environ.get("RENDER_EXTERNAL_HOSTNAME")  # Render fills this in for you
+    if _render_host:
+        ALLOWED_HOSTS.append(_render_host)
+    CSRF_TRUSTED_ORIGINS = list(globals().get("CSRF_TRUSTED_ORIGINS", [])) + [
+        "https://" + h for h in ALLOWED_HOSTS
+    ]
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # Static files (admin styling) and the built React site, served by WhiteNoise
+    STATIC_URL = "/static/"
+    STATIC_ROOT = _os_live.path.join(BASE_DIR, "staticfiles")
+    WHITENOISE_ROOT = _os_live.path.join(BASE_DIR, "frontend", "dist")
+    MIDDLEWARE = list(MIDDLEWARE)
+    _i = next((n for n, m in enumerate(MIDDLEWARE) if m.endswith("SecurityMiddleware")), -1)
+    MIDDLEWARE.insert(_i + 1, "whitenoise.middleware.WhiteNoiseMiddleware")
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+    }
+
+    # Online database (Neon). Only used when DATABASE_URL is set.
+    _db_url = _os_live.environ.get("DATABASE_URL")
+    if _db_url:
+        _u = _up_live.urlparse(_db_url)
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": _u.path.lstrip("/"),
+                "USER": _up_live.unquote(_u.username or ""),
+                "PASSWORD": _up_live.unquote(_u.password or ""),
+                "HOST": _u.hostname,
+                "PORT": _u.port or 5432,
+                "OPTIONS": {"sslmode": "require"},
+                "CONN_MAX_AGE": 60,
+            }
+        }
